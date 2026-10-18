@@ -1,0 +1,7 @@
+﻿{
+  "id": "hr_leave_policy",
+  "title": "HR Leave Policy",
+  "department": "hr",
+  "allowed_roles": ["hr", "admin"],
+  "content": "The fictional company provides eligible full-time employees with 20 days of annual leave per calendar year. Leave requests must be submitted through the HR portal and approved by the employee's manager. Questions about eligibility should be directed to the HR department."
+}

@@ -1,0 +1,7 @@
+﻿{
+  "id": "public_handbook",
+  "title": "Company Handbook",
+  "department": "public",
+  "allowed_roles": ["employee", "hr", "finance", "admin"],
+  "content": "The company working hours are 9:00 AM to 5:00 PM, Monday through Friday. Employees should contact their manager for team-specific schedules. The company supports professional development through approved training programs."
+}

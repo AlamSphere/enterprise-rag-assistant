@@ -1,0 +1,7 @@
+﻿{
+  "id": "finance_expenses",
+  "title": "Finance Expense Policy",
+  "department": "finance",
+  "allowed_roles": ["finance", "admin"],
+  "content": "The fictional company requires employees to submit business expense claims with itemized receipts within 30 days of the transaction. Expenses must comply with the company's approval limits. The finance department reviews reimbursement claims before payment."
+}
