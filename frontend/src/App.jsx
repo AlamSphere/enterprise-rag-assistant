@@ -1,5 +1,5 @@
 ﻿import React, { useState } from 'react';
-import { MessageSquare, Send, Shield, User, Database, Sparkles, Plus, Settings, HelpCircle } from 'lucide-react';
+import { MessageSquare, Send, Shield, User, Database, Sparkles, Plus } from 'lucide-react';
 
 export default function App() {
   const [messages, setMessages] = useState([
@@ -13,30 +13,54 @@ export default function App() {
   const [userRole, setUserRole] = useState('employee');
   const [loading, setLoading] = useState(false);
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
 
-    const userMessage = { role: 'user', content: input, sources: [] };
+    const userQuery = input;
+    const userMessage = { role: 'user', content: userQuery, sources: [] };
     setMessages((prev) => [...prev, userMessage]);
-    const query = input;
     setInput('');
     setLoading(true);
 
-    // Simulate backend response for now (we will connect Python backend next!)
-    setTimeout(() => {
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: userQuery,
+          user_role: userRole,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server returned status ${response.status}`);
+      }
+
+      const data = await response.json();
+
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content: `[Demo Mode - Role: ${userRole}] Received your query: "${query}". Once connected to your Python backend and Ollama, I will retrieve grounded answers with citations!`,
-          sources: [
-            { id: 'public_handbook', title: 'Public Employee Handbook', department: 'public' }
-          ]
-        }
+          content: data.answer,
+          sources: data.sources || [],
+        },
       ]);
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: `⚠️ API Error: ${err.message}. Ensure FastAPI is running on http://127.0.0.1:8000!`,
+          sources: [],
+        },
+      ]);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -44,7 +68,6 @@ export default function App() {
       {/* Sidebar */}
       <div className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between hidden md:flex">
         <div>
-          {/* Header Branding */}
           <div className="p-4 border-b border-slate-800 flex items-center space-x-3">
             <div className="bg-indigo-600 p-2 rounded-lg text-white">
               <Sparkles className="w-5 h-5" />
@@ -55,7 +78,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* New Chat Button */}
           <div className="p-4">
             <button 
               onClick={() => setMessages([{ role: 'assistant', content: 'New chat started. How can I help you today?', sources: [] }])}
@@ -66,7 +88,6 @@ export default function App() {
             </button>
           </div>
 
-          {/* Role Selector Demo Control */}
           <div className="px-4 py-2">
             <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2 flex items-center space-x-1">
               <Shield className="w-3 h-3 text-indigo-400" />
@@ -82,22 +103,17 @@ export default function App() {
               <option value="finance">Finance Team</option>
               <option value="admin">Administrator</option>
             </select>
-            <p className="text-[11px] text-slate-500 mt-1.5">
-              Simulates server-side RBAC filtering for document access.
-            </p>
           </div>
         </div>
 
-        {/* Sidebar Footer */}
         <div className="p-4 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-between">
-          <span>Ollama + Python RAG</span>
+          <span>Hugging Face + Python RAG</span>
           <span className="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
         </div>
       </div>
 
-      {/* Main Chat Workspace */}
+      {/* Main Workspace */}
       <div className="flex-1 flex flex-col h-full bg-slate-950">
-        {/* Top Navbar */}
         <header className="h-16 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-900/50 backdrop-blur">
           <div className="flex items-center space-x-2">
             <span className="text-sm font-semibold text-slate-300">Active Role:</span>
@@ -110,7 +126,6 @@ export default function App() {
           </div>
         </header>
 
-        {/* Message History Scroll Area */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
           {messages.map((msg, index) => (
             <div
@@ -119,7 +134,6 @@ export default function App() {
                 msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''
               }`}
             >
-              {/* Avatar */}
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
                   msg.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-indigo-400 border border-slate-700'
@@ -128,7 +142,6 @@ export default function App() {
                 {msg.role === 'user' ? <User className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
               </div>
 
-              {/* Message Bubble */}
               <div
                 className={`p-4 rounded-2xl text-sm leading-relaxed ${
                   msg.role === 'user'
@@ -138,7 +151,6 @@ export default function App() {
               >
                 <p className="whitespace-pre-wrap">{msg.content}</p>
 
-                {/* Citations / Sources Badge */}
                 {msg.sources && msg.sources.length > 0 && (
                   <div className="mt-3 pt-3 border-t border-slate-800/80 flex flex-wrap gap-2">
                     <span className="text-xs text-slate-400 flex items-center space-x-1">
@@ -148,10 +160,9 @@ export default function App() {
                     {msg.sources.map((src, sIdx) => (
                       <span
                         key={sIdx}
-                        className="bg-slate-800 hover:bg-slate-700 text-indigo-300 text-xs px-2 py-0.5 rounded border border-slate-700 transition cursor-pointer"
-                        title={`Department: ${src.department}`}
+                        className="bg-slate-800 hover:bg-slate-700 text-indigo-300 text-xs px-2 py-0.5 rounded border border-slate-700"
                       >
-                        📄 {src.title}
+                        📄 {src.title || src.id}
                       </span>
                     ))}
                   </div>
@@ -165,14 +176,13 @@ export default function App() {
               <div className="w-8 h-8 rounded-full bg-slate-800 text-indigo-400 border border-slate-700 flex items-center justify-center shrink-0">
                 <Sparkles className="w-4 h-4 animate-spin" />
               </div>
-              <div className="p-4 rounded-2xl bg-slate-900 text-slate-400 border border-slate-800 rounded-tl-none text-sm">
-                Retrieving authorized documents & generating response...
+              <div className="p-4 rounded-2xl bg-slate-900 text-slate-400 border border-slate-800 text-sm">
+                Searching documents & generating grounded response with Hugging Face...
               </div>
             </div>
           )}
         </div>
 
-        {/* Message Input Form */}
         <div className="p-4 md:p-6 bg-slate-950 border-t border-slate-800">
           <form onSubmit={handleSend} className="max-w-3xl mx-auto relative flex items-center">
             <input
@@ -180,19 +190,19 @@ export default function App() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about company policies, leave rules, or expense claims..."
-              className="w-full bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 text-sm rounded-2xl py-4 pl-4 pr-14 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-inner"
+              className="w-full bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 text-sm rounded-2xl py-4 pl-4 pr-14 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
             <button
               type="submit"
               disabled={!input.trim() || loading}
-              className="absolute right-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:hover:bg-indigo-600 text-white p-2.5 rounded-xl transition shadow-md"
+              className="absolute right-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white p-2.5 rounded-xl transition"
             >
               <Send className="w-4 h-4" />
             </button>
           </form>
           <div className="text-center mt-2">
             <p className="text-[11px] text-slate-500">
-              Enterprise RAG Assistant • Role-Based Access Control Enabled • Powered by Ollama & Python
+              Enterprise RAG Assistant • Role-Based Access Control Enabled • Powered by Hugging Face & Python
             </p>
           </div>
         </div>
