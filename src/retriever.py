@@ -1,30 +1,42 @@
-﻿import math
-from collections import Counter
-import re
+﻿import re
 from src.access_control import filter_documents_by_role
 
-# Enterprise Knowledge Base Documents
+# Expanded Enterprise Knowledge Base Documents
 DOCUMENTS = [
     {
         "doc_id": "it_support_guide",
         "title": "IT Support & Ticketing Guide",
         "department": "it",
         "allowed_roles": ["employee", "hr", "finance", "admin"],
-        "text": "Employees can submit an IT support ticket by visiting the internal portal at portal.company.local/it or emailing support@company.com with urgent issue details."
+        "text": "Employees can submit an IT support ticket by visiting portal.company.local/it or emailing support@company.com with urgent issue details."
     },
     {
         "doc_id": "public_employee_handbook",
         "title": "Public Employee Handbook",
         "department": "hr",
         "allowed_roles": ["employee", "hr", "finance", "admin"],
-        "text": "Standard working hours are 9:00 AM to 5:00 PM. All employees receive 20 days of paid annual leave per year along with national holidays."
+        "text": "Standard working hours are 9:00 AM to 5:00 PM Monday through Friday. Lunch breaks are 1 hour long."
     },
     {
-        "doc_id": "hr_leave_policy",
-        "title": "HR Confidential Leave & Payroll Policy",
+        "doc_id": "employee_leave_guide",
+        "title": "Employee Leave & Holidays Standard",
         "department": "hr",
-        "allowed_roles": ["hr", "admin"],
-        "text": "HR Specialists manage paid leave approvals. Annual leave consists of 20 statutory days plus 5 discretionary days approved by department managers."
+        "allowed_roles": ["employee", "hr", "finance", "admin"],
+        "text": "All full-time employees receive 20 annual paid leave days along with 10 paid public holidays per calendar year."
+    },
+    {
+        "doc_id": "remote_work_policy",
+        "title": "Remote Work & Hybrid Guidelines",
+        "department": "operations",
+        "allowed_roles": ["employee", "hr", "finance", "admin"],
+        "text": "Employees are permitted to work remotely up to 2 days per week with team manager approval and an active VPN connection."
+    },
+    {
+        "doc_id": "office_dress_code",
+        "title": "Office Dress Code Standard",
+        "department": "hr",
+        "allowed_roles": ["employee", "hr", "finance", "admin"],
+        "text": "The company observes a business casual dress code from Monday through Thursday, and casual attire on Fridays."
     },
     {
         "doc_id": "hr_compensation_policy",
@@ -42,46 +54,43 @@ DOCUMENTS = [
     }
 ]
 
+# Stopwords to ignore common structural English words
+STOPWORDS = {"what", "is", "the", "are", "our", "do", "i", "how", "to", "a", "an", "of", "for", "in", "on", "can", "where", "does", "time"}
+
 def tokenize(text: str):
-    """Simple regex tokenization for TF-IDF matching."""
-    return re.findall(r'\w+', text.lower())
+    """Tokenizes text into lowercase words while stripping common stopwords."""
+    words = re.findall(r'\w+', text.lower())
+    return set(w for w in words if w not in STOPWORDS)
 
-def compute_tfidf_similarity(query: str, documents: list):
-    """Computes basic TF-IDF similarity between query and candidate documents."""
-    query_tokens = tokenize(query)
-    if not query_tokens:
-        return []
-
-    results = []
-    for doc in documents:
-        doc_tokens = tokenize(doc["text"])
-        doc_counts = Counter(doc_tokens)
-        
-        # Calculate term overlap score
-        score = sum(doc_counts[token] for token in query_tokens if token in doc_counts)
-        if score > 0:
-            results.append((score, doc))
-
-    # Sort documents by relevance score descending
-    results.sort(key=lambda x: x[0], reverse=True)
-    return [doc for _, doc in results]
-
-def search_documents(query: str, user_role: str = "employee", top_k: int = 3):
+def search_documents(query: str, user_role: str = "employee", top_k: int = 1):
     """
     1. Filters documents using server-side RBAC rules.
-    2. Runs TF-IDF similarity search over authorized documents.
+    2. Scores documents based on meaningful keyword overlap.
     """
-    # Filter documents based on active user role
     authorized_docs = filter_documents_by_role(DOCUMENTS, user_role)
 
     if not authorized_docs:
         return []
 
-    # Retrieve relevant matching documents
-    matched_docs = compute_tfidf_similarity(query, authorized_docs)
-    
-    # If query terms don't match specific keywords, return top authorized documents as context
-    if not matched_docs:
-        return authorized_docs[:top_k]
+    query_tokens = tokenize(query)
+    if not query_tokens:
+        return []
 
-    return matched_docs[:top_k]
+    scored_docs = []
+
+    for doc in authorized_docs:
+        doc_tokens = tokenize(doc["text"] + " " + doc["title"])
+        overlap = len(query_tokens.intersection(doc_tokens))
+        
+        # Only accept documents that match meaningful query keywords
+        if overlap > 0:
+            scored_docs.append((overlap, doc))
+
+    # Sort documents by highest keyword match score
+    scored_docs.sort(key=lambda x: x[0], reverse=True)
+
+    if scored_docs:
+        return [doc for _, doc in scored_docs[:top_k]]
+
+    # If no relevant document matches, return empty list (prevents repeated loop/fallback)
+    return []

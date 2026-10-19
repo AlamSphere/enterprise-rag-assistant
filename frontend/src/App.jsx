@@ -130,7 +130,7 @@ export default function App() {
             </span>
           </div>
           <div className="text-xs text-slate-400">
-            PDA College • AI & ML Portfolio Project
+            <a href="https://github.com/AlamSphere/enterprise-rag-assistant" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-400 transition">Github</a>
           </div>
         </header>
 

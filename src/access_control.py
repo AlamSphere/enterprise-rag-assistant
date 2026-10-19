@@ -1,27 +1,27 @@
+﻿# Access Control Rules and RBAC Security Logic
 
-# Roles recognized by our application.
-VALID_ROLES = {"employee", "hr", "finance", "admin"}
+ROLE_HIERARCHY = {
+    "admin": ["admin", "finance", "hr", "employee"],
+    "finance": ["finance", "employee"],
+    "hr": ["hr", "employee"],
+    "employee": ["employee"]
+}
 
-
-def filter_documents(documents, user_role):
+def filter_documents_by_role(documents: list, user_role: str = "employee") -> list:
     """
-    Return only documents the user's role is allowed to access.
+    Filters a list of document dicts based on the user's role.
+    
+    Each document should have an 'allowed_roles' list (e.g. ['employee', 'hr']).
+    If 'allowed_roles' is missing, it defaults to public ('employee').
     """
+    user_role = user_role.lower().strip()
+    accessible_roles = ROLE_HIERARCHY.get(user_role, ["employee"])
 
-    # Reject unknown roles instead of granting access by default.
-    if not isinstance(user_role, str) or user_role not in VALID_ROLES:
-        raise ValueError("Invalid or unauthorized user role")
+    filtered_docs = []
+    for doc in documents:
+        allowed = doc.get("allowed_roles", ["employee"])
+        # Check if any role accessible by user overlaps with document allowed roles
+        if any(role in accessible_roles for role in allowed):
+            filtered_docs.append(doc)
 
-    authorized_documents = []
-
-    for document in documents:
-        allowed_roles = document.get("allowed_roles", [])
-
-        # Fail closed if the permission metadata is malformed.
-        if not isinstance(allowed_roles, list):
-            continue
-
-        if user_role in allowed_roles:
-            authorized_documents.append(document)
-
-    return authorized_documents
+    return filtered_docs
