@@ -2,10 +2,6 @@
 
 **An AI-powered enterprise knowledge assistant that retrieves relevant company documents, generates grounded answers, and demonstrates role-based document access control.**
 
-\<p align="center">   \<img src="docs/enterprise-rag-banner.png" alt="Enterprise RAG Assistant banner" width="100%"> \</p>
-
-\<p align="center">   \<img src="[https://img.shields.io/badge/Python-3.10%2B-blue?logo=python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)" alt="Python">   \<img src="[https://img.shields.io/badge/FastAPI-Backend-009688?logo=fastapi](https://img.shields.io/badge/FastAPI-Backend-009688?logo=fastapi)" alt="FastAPI">   \<img src="[https://img.shields.io/badge/React-Frontend-61DAFB?logo=react](https://img.shields.io/badge/React-Frontend-61DAFB?logo=react)" alt="React">   \<img src="[https://img.shields.io/badge/Hugging%20Face-LLM-yellow?logo=huggingface](https://img.shields.io/badge/Hugging%20Face-LLM-yellow?logo=huggingface)" alt="Hugging Face">   \<img src="[https://img.shields.io/badge/Project-Learning%20%26%20Research-purple](https://img.shields.io/badge/Project-Learning%20%26%20Research-purple)" alt="Project status"> \</p>
-
 ## 📌 Overview
 
 Enterprise RAG Assistant is a Retrieval-Augmented Generation (RAG) application designed to answer questions using enterprise knowledge sources rather than relying exclusively on a language model's pretrained knowledge.
